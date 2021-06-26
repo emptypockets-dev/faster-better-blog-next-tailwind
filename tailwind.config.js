@@ -17,7 +17,7 @@ module.exports = {
         14: '3.5rem',
       },
       fontFamily: {
-        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        sans: ['system-ui', ...defaultTheme.fontFamily.sans],
       },
       colors: {
         blue: colors.sky,
