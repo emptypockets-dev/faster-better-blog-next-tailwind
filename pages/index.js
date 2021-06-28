@@ -37,8 +37,8 @@ export default function Home({ posts }) {
             return (
               <li key={slug} className="py-12">
                 <article>
-                  <div className="xl:grid xl:grid-cols-5 xl:items-start gap-8">
-                    <dl className="xl:col-span-1">
+                  <div className="lg:grid lg:grid-cols-5 lg:items-start gap-8">
+                    <dl className="lg:col-span-1">
                       <dt className="sr-only">Published on</dt>
                       <dd className="text-base font-medium leading-8 text-gray-500 dark:text-gray-400">
                         <time dateTime={date}>
@@ -47,7 +47,7 @@ export default function Home({ posts }) {
                       </dd>
                     </dl>
 
-                    <div className="xl:col-span-1 mt-2 mb-4">
+                    <div className="lg:col-span-1 mt-2 mb-4">
                       <Image
                         src={images[0]}
                         alt="Picture of the author"
@@ -57,7 +57,7 @@ export default function Home({ posts }) {
                       />
                     </div>
 
-                    <div className="xl:col-span-3">
+                    <div className="lg:col-span-3">
                       <div className="space-y-6">
                         <div>
                           <h2 className="text-3xl font-bold tracking-tight mb-2">

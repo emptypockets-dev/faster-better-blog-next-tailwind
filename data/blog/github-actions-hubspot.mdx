@@ -3,39 +3,49 @@ title: Setting up Github Actions in Hubspot
 date: '2021-06-26'
 tags: ['github', 'code', 'hubspot']
 draft: false
-summary: Setting up a custom webpack config in Hubspot
+summary: Setting up a custom github action config to deploy in Hubspot
 images: ['/static/images/github-actions.png', '/static/images/canada/toronto.jpg']
 ---
 
-![tailwind-nextjs-banner](/static/images/twitter-card.png)
+# Custom workflow
 
-A sample post with markdown.
+Use this workflow to build a `/dist` folder when you push instead of using the one previously built during development.
 
-## Inline Highlighting
-
-Sample of inline highlighting `sum = parseInt(num1) + parseInt(num2)`
-
-## Code Blocks
-
-Some Javascript code
-
-```javascript
-var num1, num2, sum
-num1 = prompt('Enter first number')
-num2 = prompt('Enter second number')
-sum = parseInt(num1) + parseInt(num2) // "+" means "add"
-alert('Sum = ' + sum) // "+" means combine into a string
+```
+on:
+  push:
+    branches:
+    - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [12.x]
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - name: Checkout
+        uses: actions/checkout@v2.3.3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - run: npm run build
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      - name: HubSpot Deploy Action
+        uses: HubSpot/hubspot-cms-deploy-action@v1.3
+        with:
+          src_dir: dist
+          dest_dir: the-brand-theme
+          portal_id: ${{ secrets.hubspot_portal_id }}
+          personal_access_key: ${{ secrets.hubspot_personal_access_key }}
 ```
 
-Some Python code 🐍
+Modify your `build` script in package.json
 
-```python
-def fib():
-    a, b = 0, 1
-    while True:            # First iteration:
-        yield a            # yield 0 to start with and then
-        a, b = b, a + b    # a will now be 1, and b will also be 1, (0 + 1)
-
-for index, fibonacci_number in zip(range(10), fib()):
-     print('{i:3}: {f:3}'.format(i=index, f=fibonacci_number))
+```
+"build": "webpack --mode production --config webpack.config.prod.js",
 ```

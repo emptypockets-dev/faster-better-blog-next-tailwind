@@ -7,35 +7,228 @@ summary: Setting up a custom webpack config in Hubspot
 images: ['/static/images/webpack-hubspot.svg', '/static/images/canada/toronto.jpg']
 ---
 
-![tailwind-nextjs-banner](/static/images/twitter-card.png)
+- **Part 1:** Hubspot CMS Boilerplate and Webpack setup
+- **Part 2:** SCSS to CSS
+- **Part 3:** Fun Javascript to boring Javascript
+- **Part 4:** Critical CSS path
+- **Part 5:** PNG and SVG optimization
 
-A sample post with markdown.
+---
 
-## Inline Highlighting
+# Part One
 
-Sample of inline highlighting `sum = parseInt(num1) + parseInt(num2)`
+## Just the basics
 
-## Code Blocks
+The rest of this post assumes you are comfortable working with Hubspot and probably use npm all the time. Make sure you have the latest version of the Hubspot CLI installed.
+`npm install -g @hubspot/cli@latest`
 
-Some Javascript code
+### Just the boilerplate
 
-```javascript
-var num1, num2, sum
-num1 = prompt('Enter first number')
-num2 = prompt('Enter second number')
-sum = parseInt(num1) + parseInt(num2) // "+" means "add"
-alert('Sum = ' + sum) // "+" means combine into a string
+Use the Hubspot CLI to create a new website theme in a local folder. Switch to the Hubspot docs if you get stuck at this point.
+
+1. `mkdir hubspot && cd hubspot` (make a new directory named 'hubspot' and switch into it)
+
+2. `hs create website-theme src/<cool-project-name>` (create a new boilerplate hubspot theme a folder named src and name your project 'cool-project-name')
+
+3. `touch src/index.js` (create a file in /src named index.js)
+
+Run `hs init` to create a “hubspot.config.yml file” and connect your portal (almost definitely a separate sandbox or development portal that you already setup here). Follow the written instructions (copy + paste your key when prompted).
+
+`hs init`
+
+While you’re at it, you’ll eventually need a package.json file — now is a good time to create one:
+
+`npm init`
+
+Initializing a git repo is always a good idea too.
+
+`git init`
+
+### Just the dependencies
+
+`npm install --save-dev webpack webpack-cli copy-webpack-plugin @hubspot/webpack-cms-plugins`
+
+- ☑️ webpack
+- ☑️ webpack-cli
+- ☑️ copy-webpack-plugin
+- ☑️ @hubspot/webpack-cms-plugins
+
+### Just a webpack config file
+
+Create a file name webpack.config.js in your root directory. Copy pasta the code below.
+
+```js
+const HubSpotAutoUploadPlugin = require('@hubspot/webpack-cms-plugins/HubSpotAutoUploadPlugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+
+module.exports = ({ account, autoupload }) => ({
+  entry: './src/index.js',
+  output: {
+    filename: 'js/main.js',
+  },
+  plugins: [
+    new HubSpotAutoUploadPlugin({
+      account,
+      autoupload,
+      src: 'dist',
+      dest: '<your-project-folder-in-hubspot-here>',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/theme.json', to: 'theme.json' },
+        { from: 'src/fields.json', to: 'fields.json' },
+        { from: 'src/css', to: 'css' },
+        { from: 'src/images', to: 'images' },
+        { from: 'src/modules', to: 'modules' },
+        { from: 'src/templates', to: 'templates' },
+      ],
+    }),
+  ],
+})
 ```
 
-Some Python code 🐍
+You can do a lot more with webpack but this is just a start.
 
-```python
-def fib():
-    a, b = 0, 1
-    while True:            # First iteration:
-        yield a            # yield 0 to start with and then
-        a, b = b, a + b    # a will now be 1, and b will also be 1, (0 + 1)
+## Just a start
 
-for index, fibonacci_number in zip(range(10), fib()):
-     print('{i:3}: {f:3}'.format(i=index, f=fibonacci_number))
+Add a “start” script in package.json so that you don’t have to keep typing webpack — watch — mode etc etc etc.
+
+```json
+"scripts": {
+    "start": "webpack --watch --mode development --env autoupload",
+}
 ```
+
+`npm start`
+
+Next, a series of amazing things happen. The following might be too much information at the moment but understanding each step really helps make webpack easy to work with.
+
+1. Values for “account” and “autoupload” are passed to webpack.config.js.
+2. Webpack starts to build its dependency graph starting from /src/index.js
+3. Webpack creates a folder named /dist (by default) and outputs code into /dist/js/main.js.
+4. Webpack plugins start to run from the bottom up (in reverse).
+5. CopyWebpackPlugin copies all /src files into the /dist folder
+6. HubspotAutouploadPlugin syncs each file that moves through webpack into the Hubspot destination folder that you set.
+7. Webpack watches for changes. It loops through steps 2 through 6 each time a file is saved.
+
+# Part Two
+
+## Before you begin
+
+I’m still working on a good SCSS solution that allows for HubL variables and theme setup. Whatever that solution ends up being, the following is a good general setup for transpiling SCSS to CSS.
+This solution assumes your SCSS exists in “/src/scss/main.scss”.
+As you’ll see, some of the options exist just to be 100% sure that the setup is working. First confirm that it works and then start to add more custom options
+
+### Dependencies
+
+`npm install --save-dev autoprefixer css-loader mini-css-extract-plugin node-sass postcss-loader sass-loader`
+
+- ☑️ css-loader
+- ☑️ mini-css-extract-plugin
+- ☑️ node-sass
+- ☑️ postcss-loader
+- ☑️ sass-loader
+
+### Vendor prefixes
+
+Update your package.json file to include:
+
+```json
+"browserslist": [
+    "defaults",
+    "last 10 version"
+]
+```
+
+The browsers you should include depends on your needs. “last 10 version” exists so that you can compare your SCSS file and generated CSS file to make sure everything is setup correctly.
+
+### Webpack config
+
+Add MiniCSSExtraPlugin and module: to your webpack setup. Remove the CSS path from CopyWebpackPlugin. Here’s the whole webpack.config.js updated with what you’ll need:
+
+```js
+const HubSpotAutoUploadPlugin = require('@hubspot/webpack-cms-plugins/HubSpotAutoUploadPlugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+
+module.exports = ({ account, autoupload }) => ({
+  entry: './src/index.js',
+  output: {
+    filename: 'js/main.js',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          { loader: 'css-loader', options: { url: false } },
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [['autoprefixer']],
+              },
+            },
+          },
+          'sass-loader',
+        ],
+      },
+    ],
+  },
+  plugins: [
+    new HubSpotAutoUploadPlugin({
+      account,
+      autoupload,
+      src: 'dist',
+      dest: 'theme-with-webpack',
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'css/[name].css',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/images', to: 'images' },
+        { from: 'src/modules', to: 'modules' },
+        { from: 'src/templates', to: 'templates' },
+        { from: 'src/theme.json', to: 'theme.json' },
+        { from: 'src/fields.json', to: 'fields.json' },
+      ],
+    }),
+  ],
+})
+```
+
+Import your scss file in /src/index.js. Remember, this is how Webpack knows which files your website depends on (Webpack looks at index.js first).
+
+`import './scss/main.scss'`
+
+# Part 2.1
+
+## Just remember Hubspot compiles code too
+
+If you minimize your CSS code before syncing it with Hubspot then you might run into this hard to discover bug. Take a look at this example:
+
+```
+@media (min-width:768px){#global-partial-header nav .about-link{display:block;position:relative;left:-2.4rem;top:-2px}}
+```
+
+The bug: If the first selector in a media query uses an `#id`, Hubspot thinks it is the first part of a comment. Everything after that line is now commented out.
+
+The solution is to wrap your css output in a HubL raw wrapper
+
+```js
+npm install --save-dev wrapper-webpack-plugin
+/* in webpack.config.js */
+plugins: [
+/*...other plugins*/
+new WrapperPlugin({
+    test: /\.css$/,
+    header: '{% raw %} \n',
+    footer: '{% endraw %}',
+}),
+/*...other plugins*/
+],
+```
+
+Check back soon for more updates…
