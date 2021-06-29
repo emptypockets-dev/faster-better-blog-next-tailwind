@@ -1,0 +1,142 @@
+---
+title: Part One • Add webpack to Hubspot from scratch
+date: '2021-06-30'
+tags: ['webpack', 'code', 'hubspot']
+draft: false
+summary: Setting up a custom webpack config in Hubspot
+images: ['/static/images/webpack-hubspot.svg', '/static/images/canada/toronto.jpg']
+---
+
+# The minimal setup
+
+The rest of this post assumes you are comfortable working with Hubspot, have at least Node 12.x installed (I like to manage Node versions with [nvm](https://github.com/nvm-sh/nvm)) and use Terminal to run commands.
+
+First, let's make sure you have the latest version of the [Hubspot CLI](https://developers.hubspot.com/docs/cms/developer-reference/local-development-cli) installed. Run the following command in Terminal:
+
+```
+npm install -g @hubspot/cli@latest
+```
+
+## Start with the Hubspot boilerplate
+
+We'll use the Hubspot CLI to create a new website theme in a local folder. If any of this seems confusing at this point switch to the [Hubspot quick start guide](https://developers.hubspot.com/docs/cms/guides/getting-started?hsCtaTracking=28bfd0e9-ec05-48a5-b069-ce20015f54ac%7Cc66b91fb-14b1-4c35-ab0d-7e4af8000592). Otherwise, continue with the following steps:
+
+**1.** Make a new local directory named 'my-hubspot-theme' and switch into it. In Terminal run:
+
+```
+mkdir my-hubspot-theme && cd my-hubspot-theme
+```
+
+**2.** Create a new boilerplate Hubspot theme in a new src folder and name your project 'cool-project-name'. In Terminal run:
+
+```
+hs create website-theme src/<cool-project-name>
+```
+
+## Connect your local folder to Hubspot
+
+Use the Hubspot CLI to generate a hubspot.config.yml file that connects your local files to your Hubspot account. In Terminal run:
+
+```
+hs init
+```
+
+## Basic project setup
+
+While you’re at it, you’ll eventually need a package.json file — now is a good time to create one. In Terminal run:
+
+```
+npm init
+```
+
+Initializing a git repo is always a good idea too. In Terminal run:
+
+```
+git init
+```
+
+An index.js file will be necessary to customize your webpack config. In Terminal run:
+
+```
+touch src/index.js
+```
+
+## Install the required dependencies
+
+We'll eventually add more packages (and features) but these are the ones you need to get started: In Terminal run:
+
+```
+npm install --save-dev webpack webpack-cli copy-webpack-plugin @hubspot/webpack-cms-plugins
+```
+
+☑️ webpack (to bundle assets)
+
+☑️ webpack-cli (to manage webpack commands)
+
+☑️ copy-webpack-plugin (to copy files from your /src folder to a /dist folder)
+
+☑️ @hubspot/webpack-cms-plugins (to move local files to your remote Hubspot account)
+
+## The smallest webpack configuration
+
+Create a file name webpack.config.js in your root directory. Copy pasta the code below.
+
+```js
+const HubSpotAutoUploadPlugin = require('@hubspot/webpack-cms-plugins/HubSpotAutoUploadPlugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+
+module.exports = ({ account, autoupload }) => ({
+  entry: './src/index.js',
+  output: {
+    filename: 'js/main.js',
+  },
+  plugins: [
+    new HubSpotAutoUploadPlugin({
+      account,
+      autoupload,
+      src: 'dist',
+      dest: '<your-project-folder-in-hubspot-here>',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/theme.json', to: 'theme.json' },
+        { from: 'src/fields.json', to: 'fields.json' },
+        { from: 'src/css', to: 'css' },
+        { from: 'src/images', to: 'images' },
+        { from: 'src/modules', to: 'modules' },
+        { from: 'src/templates', to: 'templates' },
+      ],
+    }),
+  ],
+})
+```
+
+You can do a lot more with webpack but this is just a start.
+
+## How to run webpack
+
+Add a `start` script in `package.json` so that you don’t have to keep typing webpack — watch — mode etc etc etc.
+
+```json
+"scripts": {
+    "start": "webpack --watch --mode development --env autoupload",
+}
+```
+
+```
+npm start
+```
+
+When you run `npm start` in Terminal, a series of amazing things happen.
+
+The following might be too much information at the moment but understanding each step really helps make webpack easy to work with.
+
+1. Environment variables are passed to webpack.config.js (`account` is pulled from hubspot.config.yml and `autoupload` defaults to true).
+2. Webpack starts to build its dependency graph starting from `/src/index.js`
+3. Webpack creates a folder named `/dist` (by default) and outputs code into `/dist/js/main.js`.
+4. Webpack plugins start to run from the bottom up (in reverse).
+5. `CopyWebpackPlugin` copies all `/src` files into the `/dist` folder
+6. `HubspotAutouploadPlugin` syncs each file that moves through webpack into the Hubspot destination folder that you set.
+7. Webpack watches for changes. It loops through steps 2 through 6 each time a file is saved.
+
+In part two, we start with the basic setup and start to add more interesting features. Check back soon!
