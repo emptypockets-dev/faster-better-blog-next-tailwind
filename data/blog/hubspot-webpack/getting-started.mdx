@@ -30,7 +30,7 @@ mkdir my-hubspot-theme && cd my-hubspot-theme
 **2.** Create a new boilerplate Hubspot theme in a new src folder and name your project 'cool-project-name'. In Terminal run:
 
 ```
-hs create website-theme src/<cool-project-name>
+hs create website-theme src
 ```
 
 ## Connect your local folder to Hubspot
@@ -110,6 +110,8 @@ module.exports = ({ account, autoupload }) => ({
   ],
 })
 ```
+
+Whatever you name `<your-project-folder-in-hubspot-here>` will appear as your theme folder in `Design Tools` in Hubspot.
 
 You can do a lot more with webpack but this is just a start.
 
