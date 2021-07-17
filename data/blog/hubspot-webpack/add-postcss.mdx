@@ -79,4 +79,13 @@ import './css/styles.css';
 
 If you want to include regular CSS files (for example all the boilerplate CSS files), you can add `{ from: 'src/css', to: 'css' },` to the `CopyWebpackPlugin` patterns array.
 
-Just make sure that your compiled PostCSS file doesn't have the same name as any of the regular CSS files.
+You also need to add to create a `postcss.config.js` file in the root of your project to manage plugins.
+
+```js
+module.exports = {
+  plugins: {
+    precss: {},
+    tailwindcss: {},
+  },
+}
+```
