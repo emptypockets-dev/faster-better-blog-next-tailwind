@@ -1,0 +1,82 @@
+---
+title: Part Two • Add PostCSS to your Hubspot + Webpack workflow
+date: '2021-07-17'
+tags: ['webpack', 'postcss', 'scss', 'sass', 'code', 'hubspot']
+draft: false
+summary: Add PostCSS to your Hubspot + Webpack workflow
+images: ['/static/images/postcss.svg']
+---
+
+# Why PostCSS?
+
+I normally use SCSS for my projects but PostCSS looks better at the moment. In theory, PostCSS can do all of the same things and more. Let's see.
+
+# Webpack setup
+
+First, let's install the dependencies:
+
+```
+npm install --save-dev postcss-loader postcss precss css-loader mini-css-extract-plugin postcss-preset-env
+```
+
+Here's the updated Webpack file:
+
+```js
+const HubSpotAutoUploadPlugin = require('@hubspot/webpack-cms-plugins/HubSpotAutoUploadPlugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+
+module.exports = ({ account, autoupload }) => ({
+  entry: './src/index.js',
+  output: {
+    filename: 'js/main.js',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        exclude: /node_modules/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+          },
+          {
+            loader: 'postcss-loader',
+          },
+        ],
+      },
+    ],
+  },
+  plugins: [
+    new HubSpotAutoUploadPlugin({
+      account,
+      autoupload,
+      src: 'dist',
+      dest: 'your-theme-name-here',
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'css/styles.css',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/theme.json', to: 'theme.json' },
+        { from: 'src/fields.json', to: 'fields.json' },
+        { from: 'src/images', to: 'images' },
+        { from: 'src/modules', to: 'modules' },
+        { from: 'src/templates', to: 'templates' },
+      ],
+    }),
+  ],
+})
+```
+
+Create a `styles.css` file in your `/src/css` folder and import it into your `src/index.js` file. Any CSS you want to process with PostCSS has to go through `src/index.js`.
+
+```
+import './css/styles.css';
+```
+
+If you want to include regular CSS files (for example all the boilerplate CSS files), you can add `{ from: 'src/css', to: 'css' },` to the `CopyWebpackPlugin` patterns array.
+
+Just make sure that your compiled PostCSS file doesn't have the same name as any of the regular CSS files.
