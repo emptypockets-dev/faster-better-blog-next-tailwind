@@ -1,0 +1,69 @@
+---
+title: Add TailwindCSS to your PostCSS + Webpack + Hubspot workflow (part three)
+date: '2021-07-20'
+tags: ['webpack', 'postcss', 'css', 'tailwind', 'snippets', 'hubspot']
+draft: false
+summary: Add TailwindCSS to your PostCSS + Hubspot + Webpack workflow
+images: ['/static/images/tailwindcss-icon.svg']
+---
+
+# Why Tailwind?
+
+Tailwind takes a utility-first approach to CSS. It's slowly chipping away at the "best practice" of using semantic CSS—I'm mostly convinced. See if [this article](https://adamwathan.me/css-utility-classes-and-separation-of-concerns/) changes your mind.
+
+Make sure you review the documentation, tweak things, and really take time to understand how everything works. This set up was only lightly tested.
+
+# Getting started
+
+The next steps depend on [part one](/blog/hubspot-webpack/getting-started) and [part two](/blog/hubspot-webpack/add-postcss) of this series.
+
+# Install dependencies
+
+```
+npm install -save-dev tailwindcss@latest
+```
+
+# Tailwind config
+
+Add a `tailwind.config.js` file to the root of your project.
+
+```js
+// in tailwind.config.js
+module.exports = {
+  mode: 'jit', // critical to working in Hubspot
+  purge: ['./src/**/*.html'],
+  darkMode: false,
+  theme: {
+    extend: {},
+  },
+  variants: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+# PostCSS config
+
+Add the tailwind plugin to your PostCSS plugins list.
+
+```js
+// in postcss.config.js
+module.exports = {
+  plugins: {
+    precss: {},
+    tailwindcss: {},
+  },
+}
+```
+
+# Your CSS
+
+Include Tailwind in your `src/styles.css` file.
+
+```css
+/* ./src/css/styles.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
