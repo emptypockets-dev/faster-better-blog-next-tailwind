@@ -1,0 +1,23 @@
+---
+title: Add Babel to your TailwindCSS + PostCSS + Webpack + Hubspot workflow (part three)
+date: '2021-07-20'
+tags: ['webpack', 'postcss', 'babel', 'snippets', 'hubspot']
+draft: true
+summary: Write modern JS
+images: ['/static/images/tailwindcss-icon.svg']
+---
+
+# Why Babel?
+
+```js
+{
+          test: /\.js$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env'],
+            },
+          },
+        },
+```
