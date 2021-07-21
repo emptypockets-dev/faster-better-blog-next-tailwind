@@ -1,23 +1,109 @@
 ---
-title: Add Babel to your TailwindCSS + PostCSS + Webpack + Hubspot workflow (part three)
+title: Add Babel to your TailwindCSS + PostCSS + Webpack + Hubspot workflow (part fourt)
 date: '2021-07-20'
 tags: ['webpack', 'postcss', 'babel', 'snippets', 'hubspot']
-draft: true
+draft: false
 summary: Write modern JS
-images: ['/static/images/tailwindcss-icon.svg']
+images: ['/static/images/babel.svg']
 ---
 
 # Why Babel?
 
+Babel lets you write modern JS and then converts it down to JS that all browsers understand.
+
+# Install
+
+```
+npm install --save-dev babel-loader @babel/preset-env
+```
+
+# Webpack Config
+
+Update the webpack.config.js to choose a [devtool option](https://github.com/webpack/webpack/tree/main/examples/source-map) and set a loader for js files.
+
+Here's the full webpack config for easy reference:
+
 ```js
-{
-          test: /\.js$/,
-          exclude: /node_modules/,
-          use: {
-            loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-env'],
-            },
+const HubSpotAutoUploadPlugin = require('@hubspot/webpack-cms-plugins/HubSpotAutoUploadPlugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+
+module.exports = ({ account, autoupload }) => ({
+  entry: './src/index.js',
+  output: {
+    filename: 'js/main.js',
+  },
+  devtool: 'cheap-source-map',
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
           },
         },
+      },
+      {
+        test: /\.css$/,
+        exclude: /node_modules/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+          },
+          {
+            loader: 'postcss-loader',
+          },
+        ],
+      },
+    ],
+  },
+  plugins: [
+    new HubSpotAutoUploadPlugin({
+      account,
+      autoupload,
+      src: 'dist',
+      dest: 'your-theme-name-here-three',
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'css/styles.css',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/theme.json', to: 'theme.json' },
+        { from: 'src/fields.json', to: 'fields.json' },
+        { from: 'src/images', to: 'images' },
+        { from: 'src/modules', to: 'modules' },
+        { from: 'src/templates', to: 'templates' },
+      ],
+    }),
+  ],
+})
 ```
+
+# Tell Webpack about your JS
+
+Add `import './js/main.js';` to the top of your `src/index.js` file. This tells Webpack where to start when it's building the dependency graph.
+
+```js
+import './css/styles.css'
+import './js/main.js'
+```
+
+# Tell Babel which browsers you want to support
+
+`@babel/preset-env` looks at the `browsersList` in your `package.json` file to determine which version of JS it should transpile down to.
+
+```json
+  "browserslist": [
+    "last 2 versions",
+    "> 5%",
+    "IE 11",
+    "IE 10"
+  ]
+```
+
+You're all set. The next post will cover a include nested JS files (like those in modules) without having to include all of your JS on every page.
