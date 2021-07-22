@@ -32,6 +32,7 @@ module.exports = ({ account, autoupload }) => ({
   entry: './src/index.js',
   output: {
     filename: 'js/main.js',
+    clean: true,
   },
   devtool: 'cheap-source-map',
   module: {

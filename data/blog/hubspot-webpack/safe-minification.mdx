@@ -1,0 +1,73 @@
+---
+title: Decide if Hubspot or Webpack should minify your CSS + CSSnano
+date: '2021-07-23'
+tags: ['webpack', 'postcss', 'css', 'snippets', 'hubspot']
+draft: false
+summary: Alternate title—don't break everything by minifying your css without doing this!
+images: ['/static/images/css-3.svg']
+---
+
+## Hubspot processess your code
+
+If you minimize your CSS code before syncing it with Hubspot then you might run into this hard to discover bug. Take a look at this example:
+
+```css
+@media (min-width: 768px) {
+  #global-partial-header nav .about-link {
+    display: block;
+    position: relative;
+    left: -2.4rem;
+    top: -2px;
+  }
+}
+```
+
+The bug: If the first selector in a media query uses an `#id`, Hubspot thinks `{#global-partial-header` is the start of a comment. Everything after that line is now commented out. Whoops!
+
+The solution is to wrap your css output in a HubL raw tags `{% raw %} css here {% endraw }`
+
+```
+npm install --save-dev wrapper-webpack-plugin
+```
+
+```js
+/* in webpack.config.js */
+// top of file
+const WrapperPlugin = require('wrapper-webpack-plugin');
+// end top of file
+// plugins section
+plugins: [
+/*...other plugins*/
+new WrapperPlugin({
+    test: /\.css$/,
+    header: '{% raw %} \n',
+    footer: '{% endraw %}',
+}),
+/*...other plugins*/
+],
+```
+
+That's it!
+
+# Use CSSNano to minify
+
+You have a lot of options when minifying CSS. One simple option is to use the CSSNano as a PostCSS Plugin.
+
+## Install
+
+```
+npm install cssnano --save-dev
+```
+
+Add it to your PostCSS config:
+
+```js
+// in postcss.config.js
+module.exports = {
+  plugins: {
+    precss: {},
+    tailwindcss: {},
+    cssnano: {},
+  },
+}
+```
