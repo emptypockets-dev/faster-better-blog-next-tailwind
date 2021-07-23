@@ -1,0 +1,72 @@
+---
+title: Add Glob
+date: '2021-07-22'
+tags: ['webpack', 'postcss', 'babel', 'snippets', 'hubspot']
+draft: true
+summary: Add glob
+images: ['/static/images/babel.svg']
+---
+
+const glob = require('glob');
+const entryFiles = [
+{
+entryFiles: glob.sync('./src/modules/**/\*/module.js'),
+outputName(item) {
+return item.replace('./src/', '').replace('.js', '');
+},
+},
+{
+entryFiles: glob.sync('./src/modules/universal/**/_/module.js'),
+outputName(item) {
+return item.replace('./src/', '').replace('.js', '');
+},
+},
+{
+entryFiles: glob.sync('./src/templates/\*\*/_.js'),
+outputName(item) {
+return item.replace('./src/', '').replace('.js', '');
+},
+},
+{
+entryFiles: ['./src/index.js'],
+outputName(item) {
+return item.replace('./src/', 'global/').replace('.js', '');
+},
+},
+];
+output: {
+filename: '[name].js',
+clean: true,
+},
+entry: entryPlus(entryFiles),
+new MiniCssExtractPlugin({
+filename: '[name].css',
+}),
+
+       new CopyWebpackPlugin({
+        patterns: [
+          { from: 'src/images', to: 'images' },
+          { from: 'src/layouts', to: 'layouts' },
+          { from: 'src/global-partials', to: 'global-partials' },
+          {
+            from: 'src/modules',
+            to: 'modules',
+            globOptions: {
+              ignore: ['**/*.scss'],
+            },
+          },
+          {
+            from: 'src/templates',
+            to: 'templates',
+            globOptions: {
+              ignore: ['**/*.scss'],
+            },
+          },
+          { from: 'src/theme.json', to: 'theme.json' },
+          { from: 'src/fields.json', to: 'fields.json' },
+        ],
+      }),
+    ],
+
+};
+};
