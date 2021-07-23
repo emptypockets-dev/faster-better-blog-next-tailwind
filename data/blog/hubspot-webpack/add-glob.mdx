@@ -1,72 +1,157 @@
 ---
-title: Add Glob
-date: '2021-07-22'
-tags: ['webpack', 'postcss', 'babel', 'snippets', 'hubspot']
+title: Add a custom file structure to your Hubspot + Webpack workflow (last part)
+date: '2021-07-24'
+tags: ['webpack', 'glob', 'babel', 'snippets', 'hubspot']
 draft: true
-summary: Add glob
-images: ['/static/images/babel.svg']
+summary: This is the last part of the series. Your setup is damn near perfect after this.
+images: ['/static/images/webpack-hubspot.svg']
 ---
 
-const glob = require('glob');
+# How to process Hubspot module and template files independently
+
+One of my favorite features in Hubspot is that module CSS and JS are only added when they are used. Let's set up Webpack to take advantage of that feature.
+
+Generally, we're going to add a bunch of entry points so that some files are kept in place instead of all merged into one giant file.
+
+# Installing dependencies
+
+```
+npm install glob webpack-entry-plus
+```
+
+# Configuring Webpack
+
+Here's the complete set up. I'll review each part below:
+
+```js
+const HubSpotAutoUploadPlugin = require('@hubspot/webpack-cms-plugins/HubSpotAutoUploadPlugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const WrapperPlugin = require('wrapper-webpack-plugin')
+/* new */
+const entryPlus = require('webpack-entry-plus')
+const glob = require('glob')
+
 const entryFiles = [
-{
-entryFiles: glob.sync('./src/modules/**/\*/module.js'),
-outputName(item) {
-return item.replace('./src/', '').replace('.js', '');
-},
-},
-{
-entryFiles: glob.sync('./src/modules/universal/**/_/module.js'),
-outputName(item) {
-return item.replace('./src/', '').replace('.js', '');
-},
-},
-{
-entryFiles: glob.sync('./src/templates/\*\*/_.js'),
-outputName(item) {
-return item.replace('./src/', '').replace('.js', '');
-},
-},
-{
-entryFiles: ['./src/index.js'],
-outputName(item) {
-return item.replace('./src/', 'global/').replace('.js', '');
-},
-},
-];
-output: {
-filename: '[name].js',
-clean: true,
-},
-entry: entryPlus(entryFiles),
-new MiniCssExtractPlugin({
-filename: '[name].css',
-}),
+  {
+    entryFiles: glob.sync('./src/modules/**/*/module.js'),
+    outputName(item) {
+      return item.replace('./src/', '').replace('.js', '')
+    },
+  },
+  {
+    entryFiles: ['./src/index.js'],
+    outputName(item) {
+      return item.replace('./src/', 'js/').replace('.js', '')
+    },
+  },
+]
+/* new */
 
-       new CopyWebpackPlugin({
-        patterns: [
-          { from: 'src/images', to: 'images' },
-          { from: 'src/layouts', to: 'layouts' },
-          { from: 'src/global-partials', to: 'global-partials' },
+module.exports = ({ account, autoupload }) => ({
+  /* new */
+  entry: entryPlus(entryFiles),
+  output: {
+    filename: '[name].js',
+    clean: true,
+  },
+  /* new */
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+          },
+        },
+      },
+      {
+        test: /\.css$/,
+        exclude: /node_modules/,
+        use: [
+          MiniCssExtractPlugin.loader,
           {
-            from: 'src/modules',
-            to: 'modules',
-            globOptions: {
-              ignore: ['**/*.scss'],
-            },
+            loader: 'css-loader',
           },
           {
-            from: 'src/templates',
-            to: 'templates',
-            globOptions: {
-              ignore: ['**/*.scss'],
-            },
+            loader: 'postcss-loader',
           },
-          { from: 'src/theme.json', to: 'theme.json' },
-          { from: 'src/fields.json', to: 'fields.json' },
         ],
-      }),
+      },
     ],
+  },
+  plugins: [
+    new HubSpotAutoUploadPlugin({
+      account,
+      autoupload,
+      src: 'dist',
+      dest: 'your-theme-name-here-three',
+    }),
+    /* new */
+    new MiniCssExtractPlugin({
+      filename: '[name].css',
+    }),
+    /* new */
+    new WrapperPlugin({
+      test: /\.css$/,
+      header: '{% raw %} \n',
+      footer: '{% endraw %}',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/theme.json', to: 'theme.json' },
+        { from: 'src/fields.json', to: 'fields.json' },
+        { from: 'src/images', to: 'images' },
+        { from: 'src/modules', to: 'modules' },
+        { from: 'src/templates', to: 'templates' },
+      ],
+    }),
+  ],
+})
+```
 
-};
-};
+# More Webpack entry points
+
+In previous setups, we had one entry point that handled all of our JS and CSS files. With this new setup, we add additional entry points so that each one can create a file inside of its own module or template folder.
+
+Entry points are usually JS files so we need to import our CSS into our module.js files so that Webpack knows about them.
+
+For example, if you're starting with the boilerplate, go to `src/modules/social-follow.module/module.js` and add the modules CSS as an import:
+
+```js
+import './module.css'
+```
+
+You can do the same thing with templates if you keep them in separate folders. It all depends on your setup.
+
+I should also point out that your previous `styles.css` file is now named `index.css` file and your `main.js` file is now named `index.js`—they both end up in the your `/dist/js` folder.
+
+The names updated because Webpack is set up to use filenames for entry point names. That's how `[name].css` and `[name].js` are configured.
+
+# Globs save you time
+
+You could do this same set up without using glob patterns but it would take so much longer. Using glob entry points allows you to use dynamically generated entry points instead of having to add a new entry point every time you create a new module or folder.
+
+```js
+const entryFiles = [
+  {
+    entryFiles: glob.sync('./src/modules/**/*/module.js'),
+    outputName(item) {
+      return item.replace('./src/', '').replace('.js', '')
+    },
+  },
+  {
+    entryFiles: ['./src/index.js'],
+    outputName(item) {
+      return item.replace('./src/', 'js/').replace('.js', '')
+    },
+  },
+]
+```
+
+That's it.
+
+This is the last part of the series! If this helped you then try to teach someone else.
