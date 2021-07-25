@@ -1,0 +1,35 @@
+---
+title: Introducing the "Create Hubspot Project" CLI
+date: '2021-07-26'
+tags: ['github', 'CLI', 'hubspot']
+draft: false
+summary: A new CLI to add Webpack, PostCSS, TailwindCSS and more to the Hubspot CMS Boilerplate
+images: ['/static/images/npm-icon.svg']
+---
+
+# The CLI
+
+The CLI will set up a workflow that includes Webpack, PostCSS, TailwindCSS, Git, and more. Everything you need for a better local Hubspot development workflow.
+
+## On NPM
+
+https://www.npmjs.com/package/create-hubspot-project
+
+## On Github
+
+https://github.com/emptypockets-dev/create-hubspot-project
+
+## In Action
+
+```bash
+# 1. first install the Hubspot CLI globally
+npm install -g @hubspot/cli@latest
+
+# 2. npx uses the latest version
+npx create-hubspot-project
+# or pass --install to automatically install all dependencies
+npx create-hubspot-project --install
+
+# 3. connect your local project with Hubspot
+hs init
+```
